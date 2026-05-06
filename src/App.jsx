@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { Upload, AlertCircle, RefreshCw, ChevronDown, ChevronUp, Info } from 'lucide-react'
+import SchemaPage from './SchemaPage.jsx'
 
 // ── Palette for bounding box labels ──────────────────────────────────────────
 const BOX_COLORS = [
@@ -16,49 +17,50 @@ function getLabelColor(label, labelMap) {
 }
 
 // ── Canvas overlay component ──────────────────────────────────────────────────
-function PredictionCanvas({ imageUrl, predictions, imageNaturalSize, confidenceThreshold }) {
+function PredictionCanvas({ imageUrl, predictions, confidenceThreshold }) {
   const canvasRef = useRef(null)
   const imgRef = useRef(null)
-  const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 })
   const labelMapRef = useRef({})
 
   const draw = useCallback(() => {
     const canvas = canvasRef.current
     const img = imgRef.current
-    if (!canvas || !img) return
+    if (!canvas || !img || !img.complete || !img.naturalWidth) return
 
     const rect = img.getBoundingClientRect()
-    canvas.width = rect.width
-    canvas.height = rect.height
-    setCanvasSize({ width: rect.width, height: rect.height })
+    const w = Math.round(rect.width)
+    const h = Math.round(rect.height)
+    if (w === 0 || h === 0) return
+
+    // Set canvas intrinsic size = rendered image size. No CSS width/height on
+    // the canvas, so it sits pixel-perfect over the img for any orientation.
+    canvas.width = w
+    canvas.height = h
 
     const ctx = canvas.getContext('2d')
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
-
-    const scaleX = rect.width
-    const scaleY = rect.height
+    ctx.clearRect(0, 0, w, h)
 
     const visible = predictions.filter(p => p.confidence >= confidenceThreshold)
 
     visible.forEach((pred) => {
       const color = getLabelColor(pred.label, labelMapRef.current)
-      const x = pred.x_min * scaleX
-      const y = pred.y_min * scaleY
-      const w = (pred.x_max - pred.x_min) * scaleX
-      const h = (pred.y_max - pred.y_min) * scaleY
+      const x = pred.x_min * w
+      const y = pred.y_min * h
+      const bw = (pred.x_max - pred.x_min) * w
+      const bh = (pred.y_max - pred.y_min) * h
 
       // Box
       ctx.strokeStyle = color
       ctx.lineWidth = 2
       ctx.shadowColor = color
       ctx.shadowBlur = 6
-      ctx.strokeRect(x, y, w, h)
+      ctx.strokeRect(x, y, bw, bh)
       ctx.shadowBlur = 0
 
       // Corner accents (blueprint style)
       const cs = 10
       ctx.lineWidth = 3
-      ;[[x, y], [x + w, y], [x, y + h], [x + w, y + h]].forEach(([cx, cy], i) => {
+      ;[[x, y], [x + bw, y], [x, y + bh], [x + bw, y + bh]].forEach(([cx, cy], i) => {
         const dx = i % 2 === 0 ? 1 : -1
         const dy = i < 2 ? 1 : -1
         ctx.beginPath()
@@ -87,15 +89,17 @@ function PredictionCanvas({ imageUrl, predictions, imageNaturalSize, confidenceT
 
   useEffect(() => {
     if (!imageUrl) return
-    draw()
-    window.addEventListener('resize', draw)
-    return () => window.removeEventListener('resize', draw)
+    // ResizeObserver redraws whenever the img element changes size (window resize, etc.)
+    const observer = new ResizeObserver(draw)
+    if (imgRef.current) observer.observe(imgRef.current)
+    return () => observer.disconnect()
   }, [imageUrl, draw])
 
   if (!imageUrl) return null
 
   return (
-    <div style={{ position: 'relative', display: 'inline-block', maxWidth: '100%' }}>
+    // inline-block wrapper shrinks to exactly fit the img, regardless of orientation
+    <div style={{ position: 'relative', display: 'inline-block', lineHeight: 0, maxWidth: '100%' }}>
       <img
         ref={imgRef}
         src={imageUrl}
@@ -105,20 +109,13 @@ function PredictionCanvas({ imageUrl, predictions, imageNaturalSize, confidenceT
           display: 'block',
           maxWidth: '100%',
           maxHeight: '65vh',
-          objectFit: 'contain',
           border: '1px solid var(--border)',
         }}
       />
+      {/* No CSS width/height on canvas — intrinsic size matches img exactly */}
       <canvas
         ref={canvasRef}
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          pointerEvents: 'none',
-          width: '100%',
-          height: '100%',
-        }}
+        style={{ position: 'absolute', top: 0, left: 0, pointerEvents: 'none' }}
       />
     </div>
   )
@@ -269,6 +266,7 @@ function InfoBanner({ text }) {
 
 // ── Main App ──────────────────────────────────────────────────────────────────
 export default function App() {
+  const [tab, setTab] = useState('playground')
   const [imageFile, setImageFile] = useState(null)
   const [imageUrl, setImageUrl] = useState(null)
   const [predictions, setPredictions] = useState([])
@@ -364,6 +362,37 @@ export default function App() {
       {/* Grid rule */}
       <div style={styles.rule} />
 
+      {/* Tab nav */}
+      <div style={styles.tabNav}>
+        <div style={styles.tabNavInner}>
+          {['playground', 'schema'].map(t => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              style={{
+                ...styles.tabBtn,
+                ...(tab === t ? styles.tabBtnActive : {}),
+              }}
+            >
+              {t === 'playground' ? 'Model Playground' : 'Label Schema'}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {tab === 'schema' ? (
+        <SchemaPage />
+      ) : (
+      <>
+      {/* Framing banner */}
+      <div style={styles.framingBanner}>
+        <div style={styles.framingInner}>
+          <div style={styles.framingEyebrow}>Topic 2026 — Sitting</div>
+          <p style={styles.framingText}>
+            Sitting is a concrete, observable behavior — literally, a body on a surface — yet rich with urban meaning: resting, socializing, eating, selling, waiting, or simply being. Because sitting is defined by a recognizable pose, it is easily identified by both humans and most computer vision algorithms. Yet as urbanists, we are rarely satisfied with merely describing someone as "sitting." We describe the act in relation to context: what the person is doing while seated, how they respond to environmental conditions, how they are positioned in relation to others. These second-order activities are precisely what drew William H. Whyte to observe New Yorkers in various small urban spaces — drawing vital distinctions between the ways we sit that no binary label can capture. While an algorithm can quickly identify the act, its inherent complexities offer a perfect platform to interrogate what a truly urbanist definition of human activity could be.
+          </p>
+        </div>
+      </div>
       <main style={styles.main}>
         {/* Left column */}
         <div style={styles.leftCol}>
@@ -449,6 +478,8 @@ export default function App() {
           )}
         </div>
       </main>
+      </>
+      )}
 
       <footer style={styles.footer}>
         <span>UrbanistAI · GSAPP Urban Tech, Innovations and Planning Institutions</span>
@@ -524,9 +555,9 @@ const styles = {
   },
   headerEyebrow: {
     display: 'block',
-    fontFamily: 'var(--mono)',
+    fontFamily: "var(--accent-sans)",
     fontSize: 11,
-    letterSpacing: '0.10em',
+    letterSpacing: '0.06em',
     color: 'var(--accent)',
     textTransform: 'uppercase',
     marginBottom: 4,
@@ -542,7 +573,7 @@ const styles = {
     fontStyle: 'italic',
   },
   headerBadge: {
-    fontFamily: 'var(--mono)',
+    fontFamily: "var(--accent-sans)",
     fontSize: 11,
     color: 'var(--text-dim)',
     letterSpacing: '0.08em',
@@ -554,6 +585,64 @@ const styles = {
   rule: {
     height: 1,
     background: 'linear-gradient(90deg, var(--accent-dim) 0%, var(--border) 40%, transparent 100%)',
+  },
+  framingBanner: {
+    borderBottom: '1px solid var(--border)',
+    background: 'var(--bg-panel)',
+    padding: '18px 32px',
+  },
+  framingInner: {
+    maxWidth: 1280,
+    margin: '0 auto',
+    display: 'flex',
+    gap: 20,
+    alignItems: 'baseline',
+  },
+  framingEyebrow: {
+    fontFamily: "'IBM Plex Sans', sans-serif",
+    fontSize: 10,
+    letterSpacing: '0.10em',
+    textTransform: 'uppercase',
+    fontWeight: 600,
+    color: 'var(--accent)',
+    whiteSpace: 'nowrap',
+    flexShrink: 0,
+    paddingTop: 2,
+  },
+  framingText: {
+    fontSize: 12,
+    color: 'var(--text-muted)',
+    lineHeight: 1.75,
+    fontFamily: "'Inter', sans-serif",
+    maxWidth: 900,
+  },
+  tabNav: {
+    borderBottom: '1px solid var(--border)',
+    background: 'var(--bg-panel)',
+    padding: '0 32px',
+  },
+  tabNavInner: {
+    maxWidth: 1280,
+    margin: '0 auto',
+    display: 'flex',
+    gap: 0,
+  },
+  tabBtn: {
+    fontFamily: "'Inter', sans-serif",
+    fontSize: 13,
+    fontWeight: 500,
+    color: 'var(--text-muted)',
+    background: 'none',
+    border: 'none',
+    borderBottom: '2px solid transparent',
+    padding: '12px 20px',
+    cursor: 'pointer',
+    transition: 'color 0.15s, border-color 0.15s',
+    marginBottom: -1,
+  },
+  tabBtnActive: {
+    color: 'var(--accent)',
+    borderBottomColor: 'var(--accent)',
   },
   main: {
     flex: 1,
@@ -637,7 +726,7 @@ const styles = {
     padding: '5px 10px',
     borderRadius: 4,
     cursor: 'pointer',
-    fontFamily: 'var(--mono)',
+    fontFamily: "var(--body)",
     alignSelf: 'flex-start',
     transition: 'border-color 0.15s, color 0.15s',
   },
@@ -696,7 +785,7 @@ const styles = {
     color: 'var(--text-muted)',
     fontSize: 12,
     cursor: 'pointer',
-    fontFamily: 'var(--mono)',
+    fontFamily: "var(--body)",
   },
   predRows: {
     display: 'flex',

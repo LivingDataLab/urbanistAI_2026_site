@@ -17,7 +17,10 @@
   --accent-dim: #1240a8;
   --accent-glow: rgba(26, 86, 219, 0.10);
   --danger: #c0392b;
+  --body: 'Inter', sans-serif;
+  --accent-sans: 'IBM Plex Sans', sans-serif;
   --mono: 'IBM Plex Mono', monospace;
+  /* legacy aliases kept for compatibility */
   --serif: 'Inter', sans-serif;
 }
 
@@ -25,7 +28,7 @@ html, body {
   height: 100%;
   background: var(--bg);
   color: var(--text);
-  font-family: var(--mono);
+  font-family: var(--body);
   font-size: 14px;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
