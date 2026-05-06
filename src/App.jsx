@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { Upload, AlertCircle, RefreshCw, ChevronDown, ChevronUp, Info } from 'lucide-react'
 import SchemaPage from './SchemaPage.jsx'
+import DatasetPage from './DatasetPage.jsx'
 
 // ── Palette for bounding box labels ──────────────────────────────────────────
 const BOX_COLORS = [
@@ -365,7 +366,7 @@ export default function App() {
       {/* Tab nav */}
       <div style={styles.tabNav}>
         <div style={styles.tabNavInner}>
-          {['playground', 'schema'].map(t => (
+          {['playground', 'schema', 'dataset'].map(t => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -374,7 +375,7 @@ export default function App() {
                 ...(tab === t ? styles.tabBtnActive : {}),
               }}
             >
-              {t === 'playground' ? 'Model Playground' : 'Label Schema'}
+              {t === 'playground' ? 'Model Playground' : t === 'schema' ? 'Label Schema' : 'Training Data'}
             </button>
           ))}
         </div>
@@ -382,9 +383,12 @@ export default function App() {
 
       {tab === 'schema' ? (
         <SchemaPage />
+      ) : tab === 'dataset' ? (
+        <DatasetPage />
       ) : (
       <>
-      {/* Framing banner */}
+      {/* Framing banner — playground only */}
+      {tab === 'playground' && (
       <div style={styles.framingBanner}>
         <div style={styles.framingInner}>
           <div style={styles.framingEyebrow}>Topic 2026 — Sitting</div>
@@ -393,6 +397,7 @@ export default function App() {
           </p>
         </div>
       </div>
+      )}
       <main style={styles.main}>
         {/* Left column */}
         <div style={styles.leftCol}>
