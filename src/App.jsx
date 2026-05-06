@@ -290,11 +290,11 @@ export default function App() {
     setLoading(true)
     setError(null)
     try {
-      const base64 = await fileToBase64(file)
+      const base64 = await compressImage(file)
       const res = await fetch('/.netlify/functions/predict', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image: base64, mimeType: file.type }),
+        body: JSON.stringify({ image: base64, mimeType: 'image/jpeg' }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || `Server error ${res.status}`)
@@ -458,13 +458,48 @@ export default function App() {
   )
 }
 
-// ── Utilities ─────────────────────────────────────────────────────────────────
-function fileToBase64(file) {
+// Resize + compress image in the browser before sending to Vertex AI
+// Vertex AI hard limit: 1.5MB request. Base64 adds ~33% overhead,
+// so we target ~1MB raw JPEG → ~1.33MB base64 → well under the cap.
+function compressImage(file, maxDim = 1024, quality = 0.85) {
   return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(reader.result.split(',')[1])
-    reader.onerror = reject
-    reader.readAsDataURL(file)
+    const img = new Image()
+    const url = URL.createObjectURL(file)
+    img.onload = () => {
+      URL.revokeObjectURL(url)
+      let { width, height } = img
+
+      // Scale down so longest edge ≤ maxDim
+      if (width > maxDim || height > maxDim) {
+        if (width >= height) {
+          height = Math.round((height / width) * maxDim)
+          width = maxDim
+        } else {
+          width = Math.round((width / height) * maxDim)
+          height = maxDim
+        }
+      }
+
+      const canvas = document.createElement('canvas')
+      canvas.width = width
+      canvas.height = height
+      const ctx = canvas.getContext('2d')
+      ctx.drawImage(img, 0, 0, width, height)
+
+      canvas.toBlob(
+        blob => {
+          if (!blob) return reject(new Error('Canvas compression failed'))
+          const reader = new FileReader()
+          reader.onload = () => resolve(reader.result.split(',')[1])
+          reader.onerror = reject
+          reader.readAsDataURL(blob)
+        },
+        'image/jpeg',
+        quality
+      )
+    }
+    img.onerror = reject
+    img.src = url
   })
 }
 
