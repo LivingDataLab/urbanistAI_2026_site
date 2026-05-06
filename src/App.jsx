@@ -71,7 +71,7 @@ function PredictionCanvas({ imageUrl, predictions, imageNaturalSize, confidenceT
       // Label pill
       const pct = Math.round(pred.confidence * 100)
       const label = `${pred.label}  ${pct}%`
-      ctx.font = '500 11px "DM Mono", monospace'
+      ctx.font = '500 11px "IBM Plex Mono", monospace'
       const tw = ctx.measureText(label).width
       const ph = 20, pw = tw + 12, py = y - ph - 2 < 0 ? y + 2 : y - ph - 2
 
@@ -347,7 +347,14 @@ export default function App() {
       <header style={styles.header}>
         <div style={styles.headerInner}>
           <div>
-            <div style={styles.headerEyebrow}>Columbia Urban Tech · Spring 2026</div>
+            <a
+              href="https://livingdatalab.com/courses/utipi/"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={styles.headerEyebrow}
+            >
+              GSAPP Urban Tech, Innovations and Planning Institutions · Spring 2026
+            </a>
             <h1 style={styles.headerTitle}>Model Playground</h1>
           </div>
           <div style={styles.headerBadge}>UrbanistAI</div>
@@ -444,7 +451,7 @@ export default function App() {
       </main>
 
       <footer style={styles.footer}>
-        <span>UrbanistAI · Columbia GSAPP Urban Tech</span>
+        <span>UrbanistAI · GSAPP Urban Tech, Innovations and Planning Institutions</span>
         <span style={{ color: 'var(--text-dim)' }}>AutoML Object Detection · Student-Trained Model</span>
       </footer>
     </div>
@@ -481,12 +488,15 @@ const styles = {
     justifyContent: 'space-between',
   },
   headerEyebrow: {
+    display: 'block',
     fontFamily: 'var(--mono)',
     fontSize: 11,
-    letterSpacing: '0.12em',
+    letterSpacing: '0.10em',
     color: 'var(--accent)',
     textTransform: 'uppercase',
     marginBottom: 4,
+    textDecoration: 'none',
+    cursor: 'pointer',
   },
   headerTitle: {
     fontFamily: 'var(--serif)',
@@ -759,7 +769,7 @@ const styles = {
       linear-gradient(90deg, var(--border) 1px, transparent 1px)
     `,
     backgroundSize: '40px 40px',
-    opacity: 0.4,
+    opacity: 0.6,
   },
   emptyText: {
     position: 'relative',

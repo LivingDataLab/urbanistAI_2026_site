@@ -5,20 +5,20 @@
 }
 
 :root {
-  --bg: #0d0f0e;
-  --bg-panel: #141714;
-  --bg-raised: #1c201b;
-  --border: #2a2f28;
-  --border-bright: #3d4439;
-  --text: #e8ede5;
-  --text-muted: #7a8573;
-  --text-dim: #4a5244;
-  --accent: #a8c97f;
-  --accent-dim: #6a8a4a;
-  --accent-glow: rgba(168, 201, 127, 0.15);
-  --danger: #e07060;
-  --mono: 'DM Mono', monospace;
-  --serif: 'Fraunces', Georgia, serif;
+  --bg: #f7f8fa;
+  --bg-panel: #ffffff;
+  --bg-raised: #eef1f6;
+  --border: #dde1ea;
+  --border-bright: #c2c9d8;
+  --text: #0f1623;
+  --text-muted: #4a5568;
+  --text-dim: #9aa3b4;
+  --accent: #1a56db;
+  --accent-dim: #1240a8;
+  --accent-glow: rgba(26, 86, 219, 0.10);
+  --danger: #c0392b;
+  --mono: 'IBM Plex Mono', monospace;
+  --serif: 'Inter', sans-serif;
 }
 
 html, body {
@@ -43,4 +43,4 @@ html, body {
 ::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 3px; }
 
 /* Selection */
-::selection { background: var(--accent-glow); color: var(--accent); }
+::selection { background: var(--accent-glow); color: var(--accent-dim); }
