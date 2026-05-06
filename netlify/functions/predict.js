@@ -72,7 +72,7 @@ export const handler = async (event) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        instances: [{ content: image }],
+        instances: [{ content: image, mimeType: mimeType || 'image/jpeg' }],
       }),
     })
   } catch (e) {
@@ -83,9 +83,15 @@ export const handler = async (event) => {
   if (!vertexRes.ok) {
     const text = await vertexRes.text()
     console.error('Vertex error response:', text)
+    // Surface the actual Vertex error message for easier debugging
+    let vertexError = `Vertex AI returned ${vertexRes.status}`
+    try {
+      const parsed = JSON.parse(text)
+      if (parsed.error?.message) vertexError = parsed.error.message
+    } catch {}
     return {
       statusCode: 502,
-      body: JSON.stringify({ error: `Vertex AI returned ${vertexRes.status}` }),
+      body: JSON.stringify({ error: vertexError }),
     }
   }
 
