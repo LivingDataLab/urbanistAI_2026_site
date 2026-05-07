@@ -3,6 +3,14 @@ import { Upload, AlertCircle, RefreshCw, ChevronDown, ChevronUp, Info } from 'lu
 import SchemaPage from './SchemaPage.jsx'
 import DatasetPage from './DatasetPage.jsx'
 
+// ── Sample images for quick-start ─────────────────────────────────────────────
+const SAMPLES = [
+  { file: 'sample_steps.jpg',    caption: 'Steps' },
+  { file: 'sample_bench.jpg',    caption: 'Bench' },
+  { file: 'sample_park.jpg',     caption: 'Park' },
+  { file: 'sample_cemetery.jpg', caption: 'Plaza' },
+]
+
 // ── Palette for bounding box labels ──────────────────────────────────────────
 const BOX_COLORS = [
   '#a8c97f', '#7ec8c8', '#e0a060', '#c97fa8', '#7fa8c9',
@@ -285,6 +293,19 @@ export default function App() {
     await runInference(file)
   }
 
+  const loadSample = async (sample) => {
+    setError(null)
+    setPredictions([])
+    setHasRun(false)
+    // Fetch the public asset as a blob so we can compress + send it
+    const res = await fetch(`/samples/${sample.file}`)
+    const blob = await res.blob()
+    const file = new File([blob], sample.file, { type: 'image/jpeg' })
+    setImageUrl(`/samples/${sample.file}`)
+    setImageFile(file)
+    await runInference(file)
+  }
+
   const runInference = async (file) => {
     setLoading(true)
     setError(null)
@@ -412,6 +433,30 @@ export default function App() {
               <button style={styles.resetBtn} onClick={reset}>
                 <RefreshCw size={12} /> New image
               </button>
+            )}
+
+            {/* Sample images */}
+            {!imageUrl && !loading && (
+              <div style={styles.samples}>
+                <div style={styles.samplesLabel}>or try a sample</div>
+                <div style={styles.samplesGrid}>
+                  {SAMPLES.map(s => (
+                    <button
+                      key={s.file}
+                      style={styles.sampleBtn}
+                      onClick={() => loadSample(s)}
+                      title={s.caption}
+                    >
+                      <img
+                        src={`/samples/${s.file}`}
+                        alt={s.caption}
+                        style={styles.sampleImg}
+                      />
+                      <span style={styles.sampleCaption}>{s.caption}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
             )}
           </section>
 
@@ -620,6 +665,49 @@ const styles = {
     lineHeight: 1.75,
     fontFamily: "'Inter', sans-serif",
     maxWidth: 900,
+  },
+  samples: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 8,
+  },
+  samplesLabel: {
+    fontFamily: "'IBM Plex Sans', sans-serif",
+    fontSize: 10,
+    fontWeight: 500,
+    textTransform: 'uppercase',
+    letterSpacing: '0.08em',
+    color: 'var(--text-dim)',
+  },
+  samplesGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(4, 1fr)',
+    gap: 4,
+  },
+  sampleBtn: {
+    border: '1px solid var(--border)',
+    borderRadius: 4,
+    overflow: 'hidden',
+    cursor: 'pointer',
+    padding: 0,
+    background: 'var(--bg-raised)',
+    display: 'flex',
+    flexDirection: 'column',
+    transition: 'border-color 0.15s, transform 0.15s',
+  },
+  sampleImg: {
+    width: '100%',
+    aspectRatio: '1/1',
+    objectFit: 'cover',
+    display: 'block',
+  },
+  sampleCaption: {
+    fontFamily: "'IBM Plex Mono', monospace",
+    fontSize: 9,
+    color: 'var(--text-dim)',
+    padding: '3px 5px',
+    letterSpacing: '0.04em',
+    textAlign: 'center',
   },
   tabNav: {
     borderBottom: '1px solid var(--border)',
