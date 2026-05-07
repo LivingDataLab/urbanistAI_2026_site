@@ -5,10 +5,10 @@ import DatasetPage from './DatasetPage.jsx'
 
 // ── Sample images for quick-start ─────────────────────────────────────────────
 const SAMPLES = [
-  { file: 'sample_steps.jpg',    caption: 'Steps' },
-  { file: 'sample_bench.jpg',    caption: 'Bench' },
-  { file: 'sample_park.jpg',     caption: 'Park' },
-  { file: 'sample_cemetery.jpg', caption: 'Plaza' },
+  { file: 'sample_steps.jpg',  caption: 'Steps' },
+  { file: 'sample_bench.jpg',  caption: 'Bench' },
+  { file: 'sample_park.jpg',   caption: 'Park' },
+  { file: 'sample_office.jpg', caption: 'Office' },
 ]
 
 // ── Palette for bounding box labels ──────────────────────────────────────────
